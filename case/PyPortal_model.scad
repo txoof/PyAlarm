@@ -20,9 +20,17 @@ board_z = 1.57;
 
 //light sensor
 lights_dia = 2.4;
+//larger size for projection
+lights_dia_project = lights_dia*2;
 lights_loc_y = 22.6;
 lights_loc_x = 1.75+lights_dia/2;
 
+//sdcard
+sd_x = 17.6;
+sd_y = 14.2;
+sd_z = 2.1;
+sd_loc_x = -1.5;
+sd_loc_y = 25;
 
 
 // Screen Dimensions
@@ -51,7 +59,15 @@ jst_loc_x = board_x-jst_x;
 jst_loc_y =10;
 
 
+module sd_card(project=false) {
+  z_mult = project==true ? 100 : 1;
+  color("pink") {
+    cube([sd_x, sd_y, sd_z*z_mult], true);
+  }
+}
+
 module mount(dia, material, int_dia, project=false) {
+  z_mult = project==true ? 100 : 1;
   if (project == true) {
     union() {
       cylinder(r=dia/2, h=material, center=true);
@@ -73,96 +89,97 @@ module mount(dia, material, int_dia, project=false) {
   }
 }
 
-/* module mountx(dia, material,  int_dia=0) {
-  difference() {
-    union() {
-      cylinder(r=dia/2, h=material, center=true);
-      translate([0, -dia/4, 0]) {
-        cube([dia, dia/2, material], center=true);
-      }
-    }
-    cylinder(r=int_dia/2, h=material*2, center=true);
-  }
-} */
-
-
-module screen() {
+module screen(project=false) {
+  z_mult = project==true ? 100 : 1;
   color("silver") {
-    cube([screen_x, screen_y, screen_z], center=true);
+      cube([screen_x, screen_y, screen_z * z_mult], center=true);
   }
 }
 
-module micro_usb() {
+module micro_usb(project=false) {
+  z_mult = project==true ? 100 : 1;
   color("silver") {
-    cube([musb_x, musb_y, musb_z], center=true);
+    cube([musb_x, musb_y, musb_z*z_mult], center=true);
   }
 }
 
-module jst_block() {
+module jst_block(project=false) {
+  z_mult = project==true ? 100 : 1;
   color("DimGray") {
-    cube([jst_x, jst_y, jst_z], center=true);
+    cube([jst_x, jst_y, jst_z*z_mult], center=true);
   }
 }
 
 module light_sensor(project=false) {
-  if (project == true) {
-    color("yellow") {
-      cylinder(h=board_z*100, r=lights_dia/2, center=true);
-    }
-  } else {
-    color("yellow") {
-      cylinder(h=board_z*2, r=lights_dia/2, center=true);
-    }
+  z_mult = project==true ? 100 : 1;
+  rad = project == true ? lights_dia_project/2 : lights_dia/2;
+  color("yellow") {
+    cylinder(h=board_z*2*z_mult, r=rad, center=true);
   }
 
 }
 
+module board(board_p=false, mount_p=false) {
+  /*
+  PCB board outline with mounting holes
+  board_p(bool): project board 100*z height
+  mount_p(bool): project mount
+  */
+  z_mult = board_p==true ? 100 : 1;
 
-module board(project=false) {
-  board_dim = [board_x, board_y, board_z];
-    union(){
-      if (project==true) {
+  union() {
+    color("purple") {
+      difference() {
+        cube([board_x, board_y, board_z*z_mult], center = true);
         translate([-(board_x)/2+lights_loc_x, -(board_y)/2+lights_loc_y, 0]) {
-          light_sensor(project);
-        } // close translate
-      } // end if project
-      color("purple") {
-        difference() {
-          cube(board_dim, true);
-          if (project==false) {
-            translate([-(board_x)/2+lights_loc_x, -(board_y)/2+lights_loc_y, 0]) {
-              light_sensor(project);
-            } // close translate
-          } // end if project
-        } // close difference
-          for (i=[-1, 1]) {
-            for (j=[-1, 1]) {
-              // if j is negative, rotate 180
-              rot = j > 0 ? 0 : 180;
-              translate([i*board_dim[0]/2-i*mount_dia_ext/2, j*board_dim[1]/2+j*mount_dia_ext/2, 0]) {
-                rotate([0, 0, rot]) {
-                  mount(mount_dia_ext, board_z, mount_dia_int, project);
-                } // close rotate
-              } // close translate
-            } // close j
-          } // close i
-      } // close color
-      // place screen
-      translate([-(board_x-screen_x)/2+screen_loc_x, -(board_y-screen_y)/2+screen_loc_y, board_z/2-0.001+screen_z/2]) {
-        screen();
+          light_sensor();
+        }
       }
-
-      // place micro usb
-      translate([-(board_x-musb_x)/2, -(board_y-musb_y)/2+musb_loc_y, -board_z/2-musb_z/2]) {
-        micro_usb();
-
+      translate([-(board_x-sd_x)/2+sd_loc_x, -(board_y-sd_y)/2+sd_loc_y, -board_z/2-sd_z/2]) {
+        sd_card(board_p);
       }
+      for (i=[-1, 1]) {
+        for (j=[-1, 1]) {
+          // if j is negative, rotate 180
+          rot = j > 0 ? 0 : 180;
+          translate([i*board_x/2-i*mount_dia_ext/2, j*board_y/2+j*mount_dia_ext/2, 0]) {
+            rotate([0, 0, rot]) {
+              mount(mount_dia_ext, board_z, mount_dia_int, mount_p);
+            } // close rotate
+          } // close translate
+        } // close j
+      } // close i
+    } // close color
+  } // close union
+} // close board
 
-      // place JST block
-      translate([-(board_x-jst_x)/2+jst_loc_x, -(board_y-jst_y)/2+jst_loc_y, -(board_z+jst_z)/2]) {
-        jst_block();
-      }
+
+
+module assemble(board_p=false, mount_p=false, lights_p=false, screen_p=false) {
+  // add the board
+  board(board_p, mount_p);
+
+  // add the light sensor projection if needed
+  if (lights_p==true) {
+    translate([-(board_x)/2+lights_loc_x, -(board_y)/2+lights_loc_y, 0]) {
+      light_sensor(lights_p);
+    }
+  }
+
+  //add the screen
+  translate([-(board_x-screen_x)/2+screen_loc_x, -(board_y-screen_y)/2+screen_loc_y, board_z/2+screen_z/2]) {
+    screen(screen_p);
+  }
+
+  //add the JST connector Block
+  translate([-(board_x-jst_x)/2+jst_loc_x, -(board_y-jst_y)/2+jst_loc_y, -board_z/2-jst_z/2]) {
+    jst_block();
+  }
+
+  // add the micro USB
+  translate([-(board_x-musb_x)/2+musb_loc_x, -(board_y-musb_y)/2+musb_loc_y, -board_z/2-musb_z/2]) {
+    micro_usb();
   }
 }
 
-board();
+/* !assemble(lights_p=true, screen_p=true); */

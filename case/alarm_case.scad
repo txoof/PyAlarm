@@ -1,17 +1,28 @@
-use <finger_joint_box.scad>
-
+use <finger_joint_box.scad>;
+include <PyPortal_model.scad>
 /* [Display] */
 
 /* [Material and Design] */
 material = 4.01;
+finger_width = 5;
 
-module foot(w, h, ratio, center=false) {
-  q = w - w*(1-ratio);
 
- trans_coord = center ? [-w/2, -h/2] : [0, 0, 0];
+/* [Case Dimensions] */
+// Internal X
+case_int_x =120;
+// Internal Y
+case_int_y = 75;
+// Internal Z
+case_int_z = 75;
 
- coords = [[0, 0], [w, 0],
-           [q, h], [0, h]];
- translate(trans_coord)
-     polygon(coords);
+
+module mid_frame() {
+  difference() {
+    square([case_int_x, case_int_y], center=true);
+    translate([0, 0, -material/2-screen_z]) {
+      assemble(board_p=true, mount_p=true);
+    }
+  }
 }
+
+mid_frame();
