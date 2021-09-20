@@ -24,9 +24,9 @@ module mid_frame() {
   echo(usable_divisions);
   difference() {
     square([case_int_x+2*material, case_int_y], center=true);
-    translate([0, 0, -material/2-screen_z]) {
-      assemble(board_p=true, mount_p=true);
-    }
+    projection(cut=true) translate([0, 0, -material/2-screen_z]) {
+         assemble(board_p=true, mount_p=true);
+      }
 
     translate([frame_x/2-material, case_int_z/2, 0]) {
       rotate([0, 0, -90]) {
@@ -41,4 +41,17 @@ module mid_frame() {
   }
 }
 
-mid_frame();
+/* !mid_frame(); */
+
+module layout(threeD=false) {
+  if (threeD) {
+    linear_extrude(height=material, center=true)
+    children(0);
+  } else {
+    children(0);
+  }
+}
+
+layout(false) {
+  mid_frame();
+}
