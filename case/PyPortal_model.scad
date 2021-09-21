@@ -160,6 +160,26 @@ module board(board_p=false, mount_p=false) {
   } // close union
 } // close board
 
+
+module board_cutter() {
+  cutter_x = board_x+25;
+  mount_x = mount_dia_ext;
+  //width for corner with micro usb
+  musb_y = 5;
+  //width for corner with jst that is usable
+  jst_y = 3;
+
+  difference() {
+    square([cutter_x, board_y], center=true);
+    translate([-board_x/2+mount_x/2, board_y/2-musb_y/2, 0])
+      square([mount_x, musb_y], center=true);
+
+    translate([board_x/2-mount_x/2, board_y/2-jst_y/2, 0])
+      square([mount_x, jst_y], center=true);
+  }
+}
+
+
 module py_portal(board_p=false, mount_p=false, lights_p=false, screen_p=false, enlarge=1) {
   // add the board
   board(board_p, mount_p);
