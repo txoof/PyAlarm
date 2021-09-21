@@ -142,12 +142,16 @@ module board(board_p=false, mount_p=false) {
         sd_card(board_p);
       }
       for (i=[-1, 1]) {
-        for (j=[-1, 1]) {
+        for (j=[-1, 1] ) {
           // if j is negative, rotate 180
           rot = j > 0 ? 0 : 180;
           translate([i*board_x/2-i*mount_dia_ext/2, j*board_y/2+j*mount_dia_ext/2, 0]) {
             rotate([0, 0, rot]) {
-              mount(mount_dia_ext, board_z, mount_dia_int, mount_p);
+              if ((i==1) && (j==-1)) {
+                //pass on lower right corner -- useless can't be bolted
+              } else {
+                mount(mount_dia_ext, board_z, mount_dia_int, mount_p);
+              }
             } // close rotate
           } // close translate
         } // close j
@@ -156,9 +160,7 @@ module board(board_p=false, mount_p=false) {
   } // close union
 } // close board
 
-
-
-module assemble(board_p=false, mount_p=false, lights_p=false, screen_p=false) {
+module py_portal(board_p=false, mount_p=false, lights_p=false, screen_p=false, enlarge=1) {
   // add the board
   board(board_p, mount_p);
 
