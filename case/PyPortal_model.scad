@@ -12,11 +12,13 @@ function mm_inch(val) = val * 22.4;
 // Board Dimensions
 total_x = 89.65; //including connectors and SD card
 total_y = 64.55;
+
 mount_dia_ext = 5.08;
 mount_dia_int = 3;
 board_x = 88.265;
 board_y = 54.2;
 board_z = 1.57;
+
 
 //light sensor
 lights_dia = 2.4;
@@ -58,6 +60,7 @@ jst_z = 5.6;
 jst_loc_x = board_x-jst_x;
 jst_loc_y =10;
 
+board_mounted_z = board_z + screen_z;
 
 module sd_card(project=false) {
   z_mult = project==true ? 100 : 1;
