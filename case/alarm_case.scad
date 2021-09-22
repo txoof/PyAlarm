@@ -258,10 +258,10 @@ module layout(threeD=false) {
     rotate([90, 0, 0])
     children(7);
 
-    translate(top_p3d)
+    /* translate(top_p3d)
     color("red", alpha)
     linear_extrude(height=material, center=true)
-    children(0);
+    children(0); */
 
 
 
