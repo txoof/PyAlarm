@@ -147,11 +147,13 @@ module board(board_p=false, mount_p=false) {
           rot = j > 0 ? 0 : 180;
           translate([i*board_x/2-i*mount_dia_ext/2, j*board_y/2+j*mount_dia_ext/2, 0]) {
             rotate([0, 0, rot]) {
-              if ((i==1) && (j==-1)) {
+              mount(mount_dia_ext, board_z, mount_dia_int, mount_p);
+
+              /* if ((i==1) && (j==-1)) {
                 //pass on lower right corner -- useless can't be bolted
               } else {
                 mount(mount_dia_ext, board_z, mount_dia_int, mount_p);
-              }
+              } */
             } // close rotate
           } // close translate
         } // close j
@@ -160,6 +162,8 @@ module board(board_p=false, mount_p=false) {
   } // close union
 } // close board
 
+
+board();
 
 module board_cutter() {
   cutter_x = board_x+25;
