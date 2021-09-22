@@ -163,8 +163,6 @@ module board(board_p=false, mount_p=false) {
 } // close board
 
 
-board();
-
 module board_cutter() {
   cutter_x = board_x+25;
   mount_x = mount_dia_ext;
