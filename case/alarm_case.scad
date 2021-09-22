@@ -15,6 +15,9 @@ global_overage = 0.05;
 //vornoi roundess
 voronoi_round = 0.1; //[0.1:.1:1]
 vornoi_thickness = .4; //[0.1:.1:2]
+speaker_grill_rings = 4;
+speaker_grill_spokes = 5;
+speaker_grill_thickness = 1.5;
 
 /* [Case Dimensions] */
 // Internal X
@@ -51,13 +54,35 @@ midframe_loc_y = midframe_p3d[1];
 speaker_loc = [0, 0];
 speaker_dia = 50;
 
-module speaker_cutter() {
+module vor_speaker_cutter() {
   difference() {
     circle(r=speaker_dia/2);
     difference() {
       circle(r=speaker_dia/2);
       my_random_voronoi(speaker_dia, speaker_dia, n=100, round=voronoi_round, thickness=vornoi_thickness, center=true);
     }
+  }
+}
+
+module grill_speaker_cutter(rings=3, spokes=4, width=1.5) {
+  rad = speaker_dia/2;
+
+  difference() {
+    circle(r=speaker_dia/2);
+    union() {
+      for (i=[0:rings-1]) {
+        difference() {
+          circle(r=(rad/rings)*i+width);
+          circle(r=(rad/rings)*i);
+        }
+      }
+
+      for (j=[0:spokes-1]) {
+        rotate([0, 0, 360/spokes*j])
+        square([width, rad], center=false);
+      }
+    }
+
   }
 }
 
@@ -129,7 +154,9 @@ module bottom() {
     difference() {
       faceB(case_size, finger_width, finger_width, material);
       translate(speaker_loc) {
-        speaker_cutter();
+        /* vor_speaker_cutter(); */
+        grill_speaker_cutter(rings=speaker_grill_rings, width=speaker_grill_thickness, spokes=speaker_grill_spokes);
+
       }
 
     }
