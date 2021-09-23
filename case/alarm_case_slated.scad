@@ -1,20 +1,76 @@
 use <finger_joint_box.scad>;
 include <PyPortal_model.scad>
+use <voronoi.scad>
 
 
 /* [Design] */
 case_x = 125;
 case_y = 80;
 case_z = 75;
-finger_width = 5;
-material = 3;
 // tilt of screen from vertical
 display_tilt = 20; //[-45:45]
+finger_width = 5;
+material = 3;
+speaker_grill_type = "circular"; //[circular, voronoi]
+speaker_dia = 35;
 
+/* [Circular Speaker Grill] */
+rings = 4;
+spokes = 5;
+grill_width = 1.5;
+
+
+/* [Vornoi Speaker Grill] */
+voronoi_round = 0.1; //[0.1:.1:1]
+vornoi_thickness = .4; //[0.1:.1:2]
 
 /* [Hidden] */
 z_front = case_z/cos(display_tilt);
 y_top = case_y - case_z*tan(display_tilt);
+
+
+module vor_speaker_cutter() {
+  difference() {
+    circle(r=speaker_dia/2);
+    difference() {
+      circle(r=speaker_dia/2);
+      my_random_voronoi(speaker_dia, speaker_dia, n=100, round=voronoi_round, thickness=vornoi_thickness, center=true);
+    }
+  }
+}
+
+module grill_speaker_cutter(rings=3, spokes=4, width=1.5) {
+  rad = speaker_dia/2;
+
+  difference() {
+    circle(r=speaker_dia/2);
+    union() {
+      for (i=[0:rings-1]) {
+        difference() {
+          circle(r=(rad/rings)*i+width);
+          circle(r=(rad/rings)*i);
+        }
+      }
+
+      for (j=[0:spokes-1]) {
+        rotate([0, 0, 360/spokes*j])
+        square([width, rad], center=false);
+      }
+    }
+  }
+}
+
+
+
+module speaker_cutter() {
+  if (speaker_grill_type == "circular") {
+    grill_speaker_cutter(rings=rings, spokes=spokes, width=grill_width);
+  }
+  if (speaker_grill_type == "voronoi") {
+    vor_speaker_cutter();
+  }
+}
+
 
 module back() {
   x = case_x;
@@ -46,7 +102,11 @@ module bottom() {
   z = case_z;
 
   size = [x, y, z];
-  faceB(size, finger_width, finger_width, material);
+
+  difference() {
+    faceB(size, finger_width, finger_width, material);
+    speaker_cutter();
+  }
 
   /* square([x, y], true); */
 
