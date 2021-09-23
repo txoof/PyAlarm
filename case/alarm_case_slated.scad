@@ -5,8 +5,8 @@ use <voronoi.scad>
 
 /* [Design] */
 case_x = 125;
-case_y = 80;
-case_z = 75;
+case_y = 55;
+case_z = 70;
 // tilt of screen from vertical
 display_tilt = 20; //[-45:45]
 finger_width = 5;
@@ -89,11 +89,15 @@ module front() {
   z = z_front;
 
   size = [x, y, z];
-  faceA(size, finger_width, finger_width, material);
+  difference() {
+    faceA(size, finger_width, finger_width, material);
+    projection(cut=true)
+      translate([0, 0, board_mounted_z*2])
+      py_portal(mount_p=true, screen_p=true, lights_p=true);
+  }
 
   /* square([x, z], true); */
 }
-
 
 
 module bottom() {
