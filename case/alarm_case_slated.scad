@@ -1,6 +1,7 @@
 use <finger_joint_box.scad>;
 include <PyPortal_model.scad>
 use <voronoi.scad>
+use <BOLTS/BOLTS.scad>
 
 
 /* [Design] */
@@ -29,21 +30,39 @@ z_front = case_z/cos(display_tilt);
 y_top = case_y - case_z*tan(display_tilt);
 
 
-module vor_speaker_cutter() {
+module vor_speaker_cutter(dia=30, n=100, round=0.1, thickness=0.4, center=true) {
+  /*
+  create a circular "cutter" using the voronoi library to create
+  an organic and semi-random web
+
+  dia(real): diameter of the hole
+  n(int): number of voronoi cells
+  round(real): roundness of the cells, larger values create rounder cells
+  thickess(real): thickess of border between cells
+  center(bool): center in the area
+
+  */
   difference() {
-    circle(r=speaker_dia/2);
+    circle(r=dia/2);
     difference() {
-      circle(r=speaker_dia/2);
-      my_random_voronoi(speaker_dia, speaker_dia, n=100, round=voronoi_round, thickness=vornoi_thickness, center=true);
+      circle(r=dia/2);
+      my_random_voronoi(dia, dia, n=n, round=round, thickness=thickness, center=center);
     }
   }
 }
 
-module grill_speaker_cutter(rings=3, spokes=4, width=1.5) {
-  rad = speaker_dia/2;
+module grill_speaker_cutter(dia=30, rings=3, spokes=4, width=1.5) {
+  rad = dia/2;
+  /*
+  create a round speaker grill "Cutter" with concentric circles and spokes
 
+  dia(real): diameter of speaker_dia
+  rings(int): number of concentric rings
+  spokes(int): number of spokes radiating from center
+  width(real): width of spokes and rings
+  */
   difference() {
-    circle(r=speaker_dia/2);
+    circle(r=rad);
     union() {
       for (i=[0:rings-1]) {
         difference() {
@@ -61,15 +80,96 @@ module grill_speaker_cutter(rings=3, spokes=4, width=1.5) {
 }
 
 
-
 module speaker_cutter() {
   if (speaker_grill_type == "circular") {
-    grill_speaker_cutter(rings=rings, spokes=spokes, width=grill_width);
+    grill_speaker_cutter(dia=speaker_dia, rings=rings, spokes=spokes, width=grill_width);
   }
   if (speaker_grill_type == "voronoi") {
-    vor_speaker_cutter();
+    vor_speaker_cutter(speaker_dia, round=voronoi_round, thickness=vornoi_thickness);
   }
 }
+
+module bolt_catch(dia=3, bolt_hole=true, nut_hole=false, tab=false, overage=1.05, finger=5, project=false) {
+  key=str("M",dia);
+  nut_params = MetricHexagonNut_dims(key=key, part_mode="default");
+  match = search(["e_min"], nut_params)[0];
+  nut_dia = nut_params[match][1];
+  corner_rad = dia/4;
+  size = [nut_dia*1.3, nut_dia*1.3];
+  min_size = [size[0]-corner_rad*2, size[1]-corner_rad*2];
+
+  difference() {
+    union() {
+      minkowski() {
+        square(min_size, center=true);
+        circle(r=corner_rad);
+      } // end minkowski
+      if (tab) {
+        translate([0, -size[1]/2-material/2])
+        square([finger, material], center=true);
+      }
+    } // end union
+    if (nut_hole) {
+      circle($fn=6, r=nut_dia/2*overage);
+    }
+    if (bolt_hole) {
+      circle(r=dia/2*overage);
+    }
+  } // end difference
+
+  if (project) {
+    cylinder(h=material*100, r=dia/2, center=true);
+  }
+
+
+  /* color("red")
+  rotate([0, 0, 360/12])
+  MetricHexagonNut(key=key); */
+
+}
+
+!bolt_catch(dia=3, nut_hole=true, tab=true, project=true);
+
+
+
+/* module lidCatch(boltHole=true, project=false, tab=false, pct=1.05) {
+  if (project==false) {
+    //center on the base of the tab to make positioning easier
+    translate([0, -catch/2-cornerR])
+    difference() {
+      union() {
+        hull(center=true) {
+          square(catch, center=true);
+          //iterate over quadrants I-IV
+          //place a circle in each corner to make the rounded square hull
+          for (i=[ [-1, 1], [1, 1], [1, -1], [-1, -1]]) {
+            translate([i[0]*(catch/2), i[1]*(catch/2)])
+              circle(r=cornerR, $fn=36);
+          } // close for
+        } //close hull
+
+        //add a tab to the piece without the nut hole
+        if (boltHole==false) {
+          translate([0, (catch/2+cornerR)+thick/2])
+            square([fingerW, thick], center=true);
+        } //close if bolthole
+      } //close union
+      if (boltHole==true) {
+        circle(r=r*pct, $fn=6);
+      } else {
+        circle(r=lidBolt/2*pct, $fn=36);
+      } // close if boltHole
+    } //close difference
+  } else { //close if project
+    if (tab==false) {
+      translate([0, -catch/2-cornerR])
+        circle(r=lidBolt/2*pct, $fn=36);
+    } else {
+        //center the tab projection
+        square([fingerW*pct, thick], center=true);
+    }
+  }
+} */
 
 
 module back() {
