@@ -8,6 +8,7 @@ use <BOLTS/BOLTS.scad>
 case_x = 125;
 case_y = 55;
 case_z = 70;
+bolt_dia = 3; //[2.5, 3, 4]
 // tilt of screen from vertical
 display_tilt = 20; //[-45:45]
 finger_width = 5;
@@ -28,6 +29,19 @@ vornoi_thickness = .4; //[0.1:.1:2]
 /* [Hidden] */
 z_front = case_z/cos(display_tilt);
 y_top = case_y - case_z*tan(display_tilt);
+
+// values for calculating catch body size based on bolt size
+key = str("M", bolt_dia);
+nut_params = MetricHexagonNut_dims(key=key, part_mode="default");
+match = search(["e_min"], nut_params)[0];
+nut_dia = nut_params[match][1];
+
+catch_body_size = [nut_dia*2, nut_dia*2]; // XY size of catch
+// x, y position of catches (bottom and top panels)
+catch_x = (case_x-catch_body_size[0]-material)/2-material;
+catch_y = (case_y)/2-material*2.5;
+catch_z = (case_z)/2-catch_body_size[1];
+
 
 
 module vor_speaker_cutter(dia=30, n=100, round=0.1, thickness=0.4, center=true) {
@@ -95,45 +109,65 @@ module bolt_catch(dia=3, bolt_hole=true, nut_hole=false, tab=false, overage=1.05
   match = search(["e_min"], nut_params)[0];
   nut_dia = nut_params[match][1];
   corner_rad = dia/4;
-  size = [nut_dia*1.3, nut_dia*1.3];
+
+  size = [nut_dia*1.5, nut_dia*1.5];
   min_size = [size[0]-corner_rad*2, size[1]-corner_rad*2];
 
-  position = [0, size[0]/2+material];
+  position = tab==true ? [0, size[0]/2+material] : [0, size[0]/2];
 
-  translate(position)
-  difference() {
-    union() {
-      minkowski() {
-        square(min_size, center=true);
-        circle(r=corner_rad);
-      } // end minkowski
-      if (tab) {
-        translate([0, -size[1]/2-material/2])
-        square([finger, material], center=true);
-      }
-    } // end union
-    if (nut_hole) {
-      circle($fn=6, r=nut_dia/2*overage);
+  if (cutter==false) {
+    if (project) {
+      translate(position)
+      cylinder(h=material*100, r=dia/2, center=true);
+    } else {
+
+      translate(position)
+      difference() {
+        union() {
+          minkowski() {
+            square(min_size, center=true);
+            circle(r=corner_rad);
+          } // end minkowski
+          if (tab) {
+            translate([0, -size[1]/2-material/2])
+            square([finger, material], center=true);
+          }
+        } // end union
+        if (nut_hole) {
+          circle($fn=6, r=nut_dia/2*overage);
+        }
+        if (bolt_hole) {
+          circle(r=dia/2*overage);
+        }
+      } // end difference
     }
-    if (bolt_hole) {
-      circle(r=dia/2*overage);
-    }
-  } // end difference
-
-  if (project) {
-    translate(position)
-    cylinder(h=material*100, r=dia/2, center=true);
-  }
-
-  if (cutter) {
+  } else {
     square([finger, material], center=true);
   }
+}
 
+module bolt_catch_3d(dia=3, overage=1.05, finger=5, project=false) {
+  colors=["gold", "olive"];
 
-  /* color("red")
-  rotate([0, 0, 360/12])
-  MetricHexagonNut(key=key); */
+  rotate([90, 0, 0]) {
+  bolt_catch(tab=true, project=project);
+  color(colors[0])
+  translate([0, material, -material])
+  linear_extrude(height=material, center=true)
+    bolt_catch(dia=dia, overage=overage, finger=finger);
 
+  color(colors[1])
+  translate([0, 0, 0])
+  linear_extrude(height=material, center=true)
+    bolt_catch(dia=dia, bolt_hole=false, nut_hole=true, tab=true, overage=overage, finger=finger, project=project);
+
+  color(colors[0])
+  translate([0, material, material])
+  linear_extrude(height=material, center=true)
+    bolt_catch(dia=dia, overage=overage, finger=finger);
+  }
+
+  /* bolt_catch(dia=dia, bolt_hole=bolt_hole, nut_hole=nut_hole, tab=tab, overage=overage, finger=finger, project=project, cutter=cutter); */
 }
 
 
@@ -143,10 +177,20 @@ module back() {
   z = case_z;
 
   size = [x, y, z];
-  faceA(size, finger_width, finger_width, material);
+  difference() {
+    faceA(size, finger_width, finger_width, material);
+    for (i=[-1, 1]) {
+      for(j=[-1, 1]) {
+        shift = j==-1 ? catch_body_size[1]/2+material : 0;
+        projection(cut=true) translate([i*catch_x, j*catch_z-shift, 5])
+        #bolt_catch(project=true);
+      }
+    }
+  }
 
   /* square([x, z], true); */
 }
+
 
 module front() {
   x = case_x;
@@ -175,6 +219,11 @@ module bottom() {
   difference() {
     faceB(size, finger_width, finger_width, material);
     speaker_cutter();
+    for(i=[-1, 1]) {
+      translate([i*catch_x, catch_y]) {
+        #bolt_catch(cutter=true);
+      }
+    }
   }
 
   /* square([x, y], true); */
@@ -187,9 +236,17 @@ module top() {
   z = case_z;
 
   size = [x, y, z];
-  faceB(size, finger_width, finger_width, material);
+  difference() {
+    faceB(size, finger_width, finger_width, material);
+    for(i=[-1, 1]) {
+      translate([i*catch_x, (y_top-material)/2-2*material]) {
+        #bolt_catch(cutter=true);
+      }
+    }
+  }
   /* square([x, y], true); */
 }
+
 
 
 module mid_frame() {
@@ -278,6 +335,22 @@ module side() {
   }
 }
 
+/* module foot(w, h, ratio, center=false) {
+    q = w - w*(1-ratio);
+
+    trans_coord = center ? [-w/2, -h/2] : [0, 0, 0];
+
+    coords = [[0, 0], [w, 0],
+              [q, h], [0, h]];
+    translate(trans_coord)
+        polygon(coords);
+
+}
+
+!foot(5, 6, .4); */
+
+
+
 
 module left() {
   rotate([0, 180, 0])
@@ -321,17 +394,17 @@ module assemble_case(three_d=true) {
     linear_extrude(height=material, center=true)
       children(2);
 
-    color(colors[3])
+    /* color(colors[3])
     translate(d3_right)
     rotate([90, 0, 90])
     linear_extrude(height=material, center=true)
-      children(3);
+      children(3); */
 
-    /* color(colors[4])
+    color(colors[4])
     translate(d3_top)
     rotate([0, 0, 0])
     linear_extrude(height=material, center=true)
-      children(4); */
+      children(4);
 
     color(colors[5])
     translate(d3_front)
@@ -343,6 +416,18 @@ module assemble_case(three_d=true) {
     rotate(d3_front_rotate)
     linear_extrude(height=material, center=true)
       children(6); */
+
+
+    d3_catch_z = case_z;
+    for (i=[-1, 1]) {
+        translate([i*catch_x, catch_y, 0])
+          children(7);
+    }
+    for (j=[-1, 1]) {
+      translate([j*catch_x, catch_y, d3_catch_z])
+      rotate([0, 180, 0])
+        children(7);
+    }
 
   } else {
     echo("not implemented");
@@ -359,4 +444,5 @@ assemble_case() {
   top();      //4
   front();    //5
   mid_frame();  //6
+  bolt_catch_3d(project=false);
 }
