@@ -89,7 +89,7 @@ module speaker_cutter() {
   }
 }
 
-module bolt_catch(dia=3, bolt_hole=true, nut_hole=false, tab=false, overage=1.05, finger=5, project=false) {
+module bolt_catch(dia=3, bolt_hole=true, nut_hole=false, tab=false, overage=1.05, finger=5, project=false, cutter=false) {
   key=str("M",dia);
   nut_params = MetricHexagonNut_dims(key=key, part_mode="default");
   match = search(["e_min"], nut_params)[0];
@@ -98,6 +98,9 @@ module bolt_catch(dia=3, bolt_hole=true, nut_hole=false, tab=false, overage=1.05
   size = [nut_dia*1.3, nut_dia*1.3];
   min_size = [size[0]-corner_rad*2, size[1]-corner_rad*2];
 
+  position = [0, size[0]/2+material];
+
+  translate(position)
   difference() {
     union() {
       minkowski() {
@@ -118,7 +121,12 @@ module bolt_catch(dia=3, bolt_hole=true, nut_hole=false, tab=false, overage=1.05
   } // end difference
 
   if (project) {
+    translate(position)
     cylinder(h=material*100, r=dia/2, center=true);
+  }
+
+  if (cutter) {
+    square([finger, material], center=true);
   }
 
 
@@ -127,49 +135,6 @@ module bolt_catch(dia=3, bolt_hole=true, nut_hole=false, tab=false, overage=1.05
   MetricHexagonNut(key=key); */
 
 }
-
-!bolt_catch(dia=3, nut_hole=true, tab=true, project=true);
-
-
-
-/* module lidCatch(boltHole=true, project=false, tab=false, pct=1.05) {
-  if (project==false) {
-    //center on the base of the tab to make positioning easier
-    translate([0, -catch/2-cornerR])
-    difference() {
-      union() {
-        hull(center=true) {
-          square(catch, center=true);
-          //iterate over quadrants I-IV
-          //place a circle in each corner to make the rounded square hull
-          for (i=[ [-1, 1], [1, 1], [1, -1], [-1, -1]]) {
-            translate([i[0]*(catch/2), i[1]*(catch/2)])
-              circle(r=cornerR, $fn=36);
-          } // close for
-        } //close hull
-
-        //add a tab to the piece without the nut hole
-        if (boltHole==false) {
-          translate([0, (catch/2+cornerR)+thick/2])
-            square([fingerW, thick], center=true);
-        } //close if bolthole
-      } //close union
-      if (boltHole==true) {
-        circle(r=r*pct, $fn=6);
-      } else {
-        circle(r=lidBolt/2*pct, $fn=36);
-      } // close if boltHole
-    } //close difference
-  } else { //close if project
-    if (tab==false) {
-      translate([0, -catch/2-cornerR])
-        circle(r=lidBolt/2*pct, $fn=36);
-    } else {
-        //center the tab projection
-        square([fingerW*pct, thick], center=true);
-    }
-  }
-} */
 
 
 module back() {
