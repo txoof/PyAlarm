@@ -16,6 +16,12 @@ material = 3;
 speaker_grill_type = "circular"; //[circular, voronoi]
 speaker_dia = 35;
 
+/* [Feet] */
+foot_height = 6;
+chamfer_rad = 15;
+width_bottom = 3;
+area_above = 4;
+
 /* [Circular Speaker Grill] */
 rings = 4;
 spokes = 5;
@@ -288,6 +294,41 @@ module mid_frame_cutter() {
     mid_frame();
 }
 
+module feet(x, y, chamfer_rad, width_bottom, area_above=0) {
+  /*
+  use a minkowski union to create feet with chamfered corners
+  x(real): total width
+  y(real): total height of feet
+  chamfer_rad(real): radius of the chamfer
+  width_bottom(real): width of feet at bottom
+  area_above(real): area above feet that is left uncut
+  */
+  $fn=64;
+
+  size = [x, y+area_above];
+  min_size = [x-2*chamfer_rad-2*width_bottom, y-2];
+
+  translate([0, -area_above/2]){
+    union() {
+      translate([0, area_above/2+y/2])
+        square([x, area_above], true);
+      difference() {
+        square([x, y], center=true);
+        translate([0, -chamfer_rad/2])
+        minkowski() {
+          square(min_size, true);
+          circle(chamfer_rad);
+        }
+      } //end difference
+    } //end union
+  }
+
+
+}
+
+/* !feet(58, foot_height, 10, width_bottom, area_above); */
+
+
 module side() {
   /*
   left or right side of case
@@ -303,17 +344,12 @@ module side() {
   max_divs_tf = maxDiv([y_t, z_front, 0], finger_width);
   usable_divs_tf = usableDiv(max_divs_tf);
 
-
-
-  /* difference() {
-    polygon(points=points);
-    difference() {
-      square([x, y], center=true);
-      #faceC([0, case_y, case_z], finger_width, finger_width, material);
-    }
-  } */
   difference() {
-    polygon(points=points);
+    union() {
+      polygon(points=points);
+      translate([0, -y/2-foot_height/2-area_above/2])
+        feet(x, foot_height, chamfer_rad, width_bottom, area_above);
+    }
     translate([-x/2, -y/2-.01, 0])
       outsideCuts(length=x, finger=finger_width, cutD=material+.02, div=usable_divs_xy[0]);
     translate([x/2, -y/2, 0])
@@ -335,19 +371,8 @@ module side() {
   }
 }
 
-/* module foot(w, h, ratio, center=false) {
-    q = w - w*(1-ratio);
+/* !side(); */
 
-    trans_coord = center ? [-w/2, -h/2] : [0, 0, 0];
-
-    coords = [[0, 0], [w, 0],
-              [q, h], [0, h]];
-    translate(trans_coord)
-        polygon(coords);
-
-}
-
-!foot(5, 6, .4); */
 
 
 
