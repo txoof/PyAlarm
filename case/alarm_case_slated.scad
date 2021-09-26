@@ -6,7 +6,7 @@ use <BOLTS/BOLTS.scad>
 
 /* [Design] */
 case_x = 125;
-case_y = 55;
+case_y = 70;
 case_z = 78;
 bolt_dia = 3; //[2.5, 3, 4]
 // tilt of screen from vertical
@@ -23,10 +23,10 @@ speaker_dia = 35;
 
 
 /* [Feet] */
-foot_height = 6;
+/* foot_height = 6;
 chamfer_rad = 15;
 width_bottom = 3;
-area_above = 4;
+area_above = 4; */
 
 /* [Circular Speaker Grill] */
 rings = 4;
@@ -116,7 +116,6 @@ module grill_speaker_cutter(dia=30, rings=3, spokes=4, width=1.5) {
   }
 }
 
-
 module speaker_cutter() {
   if (speaker_grill_type == "circular") {
     grill_speaker_cutter(dia=speaker_dia, rings=rings, spokes=spokes, width=grill_width);
@@ -204,12 +203,9 @@ module front() {
   difference() {
     faceA(size, finger_width, finger_width, material);
     projection(cut=true)
+      rotate([0, 180, 0])
       translate([0, 0, board_mounted_z*2])
       py_portal(mount_p=true, screen_p=true, lights_p=true);
-
-    /* translate(cable_loc)
-    rotate([0, 0, 180])
-    power_cable_cutter(); */
 
     for (i=[-1, 1]) {
       for(j=[-1, 1]) {
@@ -221,23 +217,6 @@ module front() {
     } // end i
   } // end difference
 } // end front
-
-
-module xfront() {
-  x = case_x;
-  y = case_y;
-  z = z_front;
-
-  size = [x, y, z];
-  difference() {
-    faceA(size, finger_width, finger_width, material);
-    /* projection(cut=true)
-      translate([0, 0, board_mounted_z*2])
-      py_portal(mount_p=true, screen_p=true, lights_p=true); */
-  }
-
-  /* square([x, z], true); */
-}
 
 
 module back() {
@@ -261,9 +240,11 @@ module back() {
   difference() {
     faceA(size, finger_width, finger_width, material);
 
+    speaker_cutter();
+
     translate(cable_loc)
     rotate([0, 0, 180])
-    power_cable_cutter();
+      power_cable_cutter();
   }
 
   /* square([x, z], true); */
@@ -280,11 +261,11 @@ module bottom() {
     faceB(size, finger_width, finger_width, material);
     for(i=[-1, 1]) {
       translate([i*catch_x, catch_y]) {
-        #bolt_catch(cutter=true);
-      }
-    }
-  }
-}
+        bolt_catch(cutter=true);
+      } // end translate
+    } // end i
+  } // difference
+} // end bottom
 
 module top() {
   x = case_x;
@@ -302,8 +283,6 @@ module top() {
   }
   /* square([x, y], true); */
 }
-
-
 
 module feet(x, y, chamfer_rad, width_bottom, area_above=0) {
   /*
@@ -371,10 +350,6 @@ module side() {
     translate([points[3][0], y/2-material, 0])
       outsideCuts(length=y_t, finger=finger_width, cutD=material, div=usable_divs_tf[0]);
 
-    /* translate([-case_y/2+material/2+5*material, 0, 0])
-    rotate([0, 0, -display_tilt])
-      mid_frame_cutter(); */
-
   }
 }
 
@@ -387,9 +362,6 @@ module left() {
 module right() {
   side();
 }
-
-
-
 
 module assemble_case(three_d=true) {
   colors = ["red", "blue", "yellow", "purple", "orange", "green"];
@@ -464,7 +436,6 @@ module assemble_case(three_d=true) {
   } else {
     echo("not implemented");
   }
-
 
 }
 
