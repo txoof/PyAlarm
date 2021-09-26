@@ -474,6 +474,6 @@ assemble_case() {
   top();      //4
   front();    //5
   mid_frame();  //6
-  bolt_catch_3d(project=false);
+  bolt_catch_3d(project=false); //7
   py_portal(); //8
 }
