@@ -399,6 +399,7 @@ module assemble_case(three_d=true) {
   d3_midframe = [d3_front[0], d3_front[1]+board_mounted_z, d3_front[2]];
   d3_left = [-(case_x-material)/2, 0, case_z/2];
   d3_right = [(case_x-material)/2, 0, case_z/2];
+  d3_pyportal = [d3_front[0], d3_front[1]+screen_z/2, d3_front[2]];
 
 
   if (three_d) {
@@ -454,6 +455,10 @@ module assemble_case(three_d=true) {
         children(7);
     }
 
+    translate(d3_pyportal)
+    rotate(d3_front_rotate)
+      children(8);
+
   } else {
     echo("not implemented");
   }
@@ -470,4 +475,5 @@ assemble_case() {
   front();    //5
   mid_frame();  //6
   bolt_catch_3d(project=false);
+  py_portal(); //8
 }
