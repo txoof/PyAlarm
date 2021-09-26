@@ -11,10 +11,16 @@ case_z = 70;
 bolt_dia = 3; //[2.5, 3, 4]
 // tilt of screen from vertical
 display_tilt = 20; //[-45:45]
+// widht of finger joints
 finger_width = 5;
+// thickness of material
 material = 3;
+
+// type of speaker grill to use
 speaker_grill_type = "circular"; //[circular, voronoi]
+//diameter of speaker
 speaker_dia = 35;
+
 
 /* [Feet] */
 foot_height = 6;
