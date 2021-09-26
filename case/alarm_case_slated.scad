@@ -199,9 +199,20 @@ module back() {
   y = case_y;
   z = case_z;
 
-  cable_loc = [-finger_width*0, -(z/2-material-power_cable_rad), 0];
+  // calculate the number of divisions
+  max_x_div = floor(x/finger_width);
+  // calculate the usable divisions
+  use_x_div = max_x_div%2==0 ? max_x_div-3 : max_x_div-2;
+  // actual number of cuts
+  cuts_x = floor(use_x_div/2);
+  // set the offset to 0 if number is even, else 1
+  x_offset = cuts_x%2==0 ? 0 : 1;
+
+  // use the offset to move the cable opening
+  cable_loc = [finger_width*x_offset, -(z/2-material-power_cable_rad), 0];
 
   size = [x, y, z];
+
   difference() {
     faceA(size, finger_width, finger_width, material);
 
