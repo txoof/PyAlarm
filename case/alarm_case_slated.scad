@@ -379,8 +379,8 @@ module side() {
   difference() {
     union() {
       polygon(points=points);
-      translate([0, -y/2-foot_height/2-area_above/2])
-        feet(x, foot_height, chamfer_rad, width_bottom, area_above);
+      /* translate([0, -y/2-foot_height/2-area_above/2])
+        feet(x, foot_height, chamfer_rad, width_bottom, area_above); */
     }
     translate([-x/2, -y/2-.01, 0])
       outsideCuts(length=x, finger=finger_width, cutD=material+.02, div=usable_divs_xy[0]);
