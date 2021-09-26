@@ -54,7 +54,18 @@ catch_x = (case_x-catch_body_size[0]-material)/2-material;
 catch_y = (case_y)/2-material*2.5;
 catch_z = (case_z)/2-catch_body_size[1];
 
+// radius of power cable opening
+power_cable_rad = finger_width/2;
 
+
+module power_cable_cutter() {
+  translate([0, 0])
+  union() {
+    circle(r=power_cable_rad);
+    translate([0, power_cable_rad/2])
+      square([power_cable_rad*2, power_cable_rad], center=true);
+  }
+}
 
 module vor_speaker_cutter(dia=30, n=100, round=0.1, thickness=0.4, center=true) {
   /*
@@ -188,14 +199,22 @@ module back() {
   y = case_y;
   z = case_z;
 
+  cable_loc = [-finger_width*0, -(z/2-material-power_cable_rad), 0];
+
   size = [x, y, z];
   difference() {
     faceA(size, finger_width, finger_width, material);
+
+    translate(cable_loc)
+    rotate([0, 0, 180])
+    power_cable_cutter();
+
     for (i=[-1, 1]) {
       for(j=[-1, 1]) {
+        // amount to shift the +z catches
         shift = j==-1 ? catch_body_size[1]/2+material : 0;
         projection(cut=true) translate([i*catch_x, j*catch_z-shift, 5])
-        #bolt_catch(project=true);
+        bolt_catch();
       }
     }
   }
@@ -203,6 +222,7 @@ module back() {
   /* square([x, z], true); */
 }
 
+/* !back(); */
 
 module front() {
   x = case_x;
@@ -328,12 +348,7 @@ module feet(x, y, chamfer_rad, width_bottom, area_above=0) {
       } //end difference
     } //end union
   }
-
-
 }
-
-/* !feet(58, foot_height, 10, width_bottom, area_above); */
-
 
 module side() {
   /*
@@ -376,11 +391,6 @@ module side() {
 
   }
 }
-
-/* !side(); */
-
-
-
 
 
 module left() {
