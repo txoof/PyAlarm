@@ -7,7 +7,7 @@ use <BOLTS/BOLTS.scad>
 /* [Design] */
 case_x = 125;
 case_y = 55;
-case_z = 70;
+case_z = 78;
 bolt_dia = 3; //[2.5, 3, 4]
 // tilt of screen from vertical
 display_tilt = 20; //[-45:45]
@@ -194,10 +194,56 @@ module bolt_catch_3d(dia=3, overage=1.05, finger=5, project=false) {
 }
 
 
-module back() {
+module front() {
   x = case_x;
   y = case_y;
   z = case_z;
+
+  size = [x, y, z];
+
+  difference() {
+    faceA(size, finger_width, finger_width, material);
+    projection(cut=true)
+      translate([0, 0, board_mounted_z*2])
+      py_portal(mount_p=true, screen_p=true, lights_p=true);
+
+    /* translate(cable_loc)
+    rotate([0, 0, 180])
+    power_cable_cutter(); */
+
+    for (i=[-1, 1]) {
+      for(j=[-1, 1]) {
+        // amount to shift the +z catches
+        shift = j==-1 ? catch_body_size[1]/2+material : 0;
+        projection(cut=true) translate([i*catch_x, j*catch_z-shift, 5])
+        bolt_catch(project=true);
+      } // end j
+    } // end i
+  } // end difference
+} // end front
+
+
+module xfront() {
+  x = case_x;
+  y = case_y;
+  z = z_front;
+
+  size = [x, y, z];
+  difference() {
+    faceA(size, finger_width, finger_width, material);
+    /* projection(cut=true)
+      translate([0, 0, board_mounted_z*2])
+      py_portal(mount_p=true, screen_p=true, lights_p=true); */
+  }
+
+  /* square([x, z], true); */
+}
+
+
+module back() {
+  x = case_x;
+  y = case_y;
+  z = z_front;
 
   // calculate the number of divisions
   max_x_div = floor(x/finger_width);
@@ -212,45 +258,16 @@ module back() {
   cable_loc = [finger_width*x_offset, -(z/2-material-power_cable_rad), 0];
 
   size = [x, y, z];
-
   difference() {
     faceA(size, finger_width, finger_width, material);
 
     translate(cable_loc)
     rotate([0, 0, 180])
     power_cable_cutter();
-
-    for (i=[-1, 1]) {
-      for(j=[-1, 1]) {
-        // amount to shift the +z catches
-        shift = j==-1 ? catch_body_size[1]/2+material : 0;
-        projection(cut=true) translate([i*catch_x, j*catch_z-shift, 5])
-        bolt_catch();
-      }
-    }
   }
 
   /* square([x, z], true); */
 }
-
-/* !back(); */
-
-module front() {
-  x = case_x;
-  y = case_y;
-  z = z_front;
-
-  size = [x, y, z];
-  difference() {
-    faceA(size, finger_width, finger_width, material);
-    projection(cut=true)
-      translate([0, 0, board_mounted_z*2])
-      py_portal(mount_p=true, screen_p=true, lights_p=true);
-  }
-
-  /* square([x, z], true); */
-}
-
 
 module bottom() {
   x = case_x;
@@ -261,16 +278,12 @@ module bottom() {
 
   difference() {
     faceB(size, finger_width, finger_width, material);
-    speaker_cutter();
     for(i=[-1, 1]) {
       translate([i*catch_x, catch_y]) {
         #bolt_catch(cutter=true);
       }
     }
   }
-
-  /* square([x, y], true); */
-
 }
 
 module top() {
@@ -291,45 +304,6 @@ module top() {
 }
 
 
-
-module mid_frame() {
-  x = case_x;
-  y = z_front-4*material;
-  z = 0;
-
-  max_divs = maxDiv([x, y, z], finger_width);
-  usable_divs = usableDiv(max_divs);
-
-  difference() {
-    square([x, y], center=true);
-    board_cutter();
-    projection(cut=true) translate([0, 0, 20]) py_portal(mount_p=true);
-
-
-    translate([-(x/2), y/2, 0]) {
-      rotate([0, 0, -90]) {
-        outsideCuts(y, finger_width, material, usable_divs[1]);
-      }
-    }
-
-    translate([(x/2), -y/2, 0]) {
-      rotate([0, 0, 90]) {
-        outsideCuts(y, finger_width, material, usable_divs[1]);
-      }
-    }
-
-  }
-}
-
-module mid_frame_cutter() {
-
-  translate([material/2, 0, 0])
-  projection(cut=true)
-    translate([0, 0, case_x/2-material/2])
-    rotate([0, 90, 0])
-    #linear_extrude(height=material, center=true)
-    mid_frame();
-}
 
 module feet(x, y, chamfer_rad, width_bottom, area_above=0) {
   /*
@@ -379,6 +353,7 @@ module side() {
   difference() {
     union() {
       polygon(points=points);
+      //add feet to sides
       /* translate([0, -y/2-foot_height/2-area_above/2])
         feet(x, foot_height, chamfer_rad, width_bottom, area_above); */
     }
@@ -439,7 +414,7 @@ module assemble_case(three_d=true) {
     translate(d3_back)
     rotate([90, 0, 0])
     linear_extrude(height=material, center=true)
-      children(1);
+      children(5);
 
     color(colors[2])
     translate(d3_left)
@@ -463,7 +438,7 @@ module assemble_case(three_d=true) {
     translate(d3_front)
     rotate(d3_front_rotate)
     linear_extrude(height=material, center=true)
-      children(5);
+      children(1);
 
     /* translate(d3_midframe)
     rotate(d3_front_rotate)
@@ -482,9 +457,9 @@ module assemble_case(three_d=true) {
         children(7);
     }
 
-    translate(d3_pyportal)
+    /* translate(d3_pyportal)
     rotate(d3_front_rotate)
-      children(8);
+      children(8); */
 
   } else {
     echo("not implemented");
