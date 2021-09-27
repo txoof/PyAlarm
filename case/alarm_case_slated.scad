@@ -241,8 +241,8 @@ module front() {
   difference() {
     faceA(size, finger_width, finger_width, material);
     projection(cut=true)
-      rotate([0, 180, 0])
-      translate([0, 0, board_mounted_z*2])
+      rotate([180, 0, 0])
+      translate([0, 0, -board_mounted_z*2])
       py_portal(mount_p=true, screen_p=true, lights_p=true);
 
     for (i=[-1, 1]) {
@@ -255,7 +255,6 @@ module front() {
     } // end i
   } // end difference
 } // end front
-
 
 module back() {
   x = case_x;
@@ -400,6 +399,8 @@ module left() {
 module right() {
   side();
 }
+
+
 
 module assemble_case(three_d=true) {
   colors = ["red", "blue", "yellow", "purple", "orange", "green"];
