@@ -6,29 +6,32 @@ use <BOLTS/BOLTS.scad>
 
 /* [Design] */
 case_x = 125;
-case_y = 70;
+case_y = 72;
 case_z = 78;
-bolt_dia = 3; //[2.5, 3, 4]
-// tilt of screen from vertical
-display_tilt = 20; //[-45:45]
+// tilt of back from vertical
+back_tilt = 15; //[-45:45]
 // widht of finger joints
 finger_width = 5;
 // thickness of material
-material = 3;
+material = 3.1;
 
 // type of speaker grill to use
-speaker_grill_type = "circular"; //[circular, voronoi]
+speaker_grill_type = "grill"; //[grill, voronoi]
 //diameter of speaker
 speaker_dia = 35;
 
-
+/* [Cable Holder] */
+cable_holder_x = 30;
+cable_holder_y = 15;
+micro_usb_x = 8;
+micro_usb_y = 8;
 /* [Feet] */
 /* foot_height = 6;
 chamfer_rad = 15;
 width_bottom = 3;
 area_above = 4; */
 
-/* [Circular Speaker Grill] */
+/* [Spoked Speaker Grill] */
 rings = 4;
 spokes = 5;
 grill_width = 1.5;
@@ -37,6 +40,11 @@ grill_width = 1.5;
 /* [Vornoi Speaker Grill] */
 voronoi_round = 0.1; //[0.1:.1:1]
 vornoi_thickness = .4; //[0.1:.1:2]
+
+/* [Circular Speaker Grill] */
+peaker_dia = 38;
+c_rings = 5;
+starting_r = 3;
 
 /* [Arcade Buttons] */
 button_screw_r = 14;
@@ -48,8 +56,11 @@ button_h = 1+button_cap_h;
 button_fillet_r = 1;
 
 /* [Hidden] */
-z_front = case_z/cos(display_tilt);
-y_top = case_y - case_z*tan(display_tilt);
+PI = 3.14159;
+z_front = case_z/cos(back_tilt);
+y_top = case_y - case_z*tan(back_tilt);
+bolt_dia = 3; //[2.5, 3, 4]
+
 
 // values for calculating catch body size based on bolt size
 key = str("M", bolt_dia);
@@ -125,8 +136,10 @@ module grill_speaker_cutter(dia=30, rings=3, spokes=4, width=1.5) {
   }
 }
 
+
+
 module speaker_cutter() {
-  if (speaker_grill_type == "circular") {
+  if (speaker_grill_type == "grill") {
     grill_speaker_cutter(dia=speaker_dia, rings=rings, spokes=spokes, width=grill_width);
   }
   if (speaker_grill_type == "voronoi") {
@@ -231,6 +244,40 @@ module arcade_button() {
 
 }
 
+module cable_holder(corner_rad=1, length=30, h=15, material=3,
+  add_tab=true, bolt=3, tab=5, micro_x=8, micro_y=8) {
+  mink_body_size = [length-2*corner_rad, h-2*corner_rad];
+  mink_usb_size = [micro_x-2*corner_rad, micro_y];
+  $fn=36;
+  difference() {
+    union() {
+      minkowski() {
+        square(mink_body_size, center=true);
+        circle(corner_rad);
+      } // end minkowski
+      if(add_tab) {
+        for (i=[-1, 1]) {
+          translate([i*(length-tab)/2, -h/2, 0])
+            square([tab, material*2], center=true);
+        } //end for
+      }
+    } //end union
+
+    for(i=[-1, 1]) {
+      translate([i*(length/2-bolt), 0, 0])
+        circle(r=bolt/2);
+    } // end for
+
+    if(add_tab){
+      translate([0, -h/2+micro_y/2])
+      minkowski() {
+        square(mink_usb_size, center=true);
+        circle(corner_rad);
+      } // end usb minkowski
+    } // end if tab
+  } // end difference
+} // end cable holder
+
 module front() {
   x = case_x;
   y = case_y;
@@ -314,9 +361,14 @@ module top() {
     faceB(size, finger_width, finger_width, material);
     for(i=[-1, 1]) {
       translate([i*catch_x, (y_top-material)/2-2*material]) {
-        #bolt_catch(cutter=true);
+        bolt_catch(cutter=true);
       }
-    }
+    } // end for i
+
+    for(j=[-1, 1]) {
+      translate([case_x/4*j, 0, 0])
+      projection(cut=true) translate([0, 0, button_screw_h/2]) arcade_button();
+    } //end for j
   }
   /* square([x, y], true); */
 }
@@ -381,7 +433,7 @@ module side() {
 
     translate(points[0])
     translate([material, 0, 0])
-    rotate([0, 0, 90-display_tilt])
+    rotate([0, 0, 90-back_tilt])
       outsideCuts(length=z_front, finger=finger_width, cutD=material, div=usable_divs_tf[1]);
 
     translate([points[3][0], y/2-material, 0])
@@ -408,12 +460,13 @@ module assemble_case(three_d=true) {
   d3_top = [0, (case_y-y_top)/2, case_z-material/2];
   d3_front = [0, (case_y/2-material/2), case_z/2];
   d3_back = [0, -(case_y-material)/2+(case_y-y_top)/2, case_z/2];
-  d3_back_rotate = [90-display_tilt, 0, 0];
+  d3_back_rotate = [90-back_tilt, 0, 0];
   d3_midframe = [d3_back[0], d3_back[1]+board_mounted_z, d3_back[2]];
   d3_left = [-(case_x-material)/2, 0, case_z/2];
   d3_right = [(case_x-material)/2, 0, case_z/2];
   d3_pyportal = [d3_front[0], d3_front[1]-board_mounted_z/2, d3_front[2]];
   d3_button = [case_x/4, d3_top[1], d3_top[2]+material/2];
+  d3_cableholder = [-case_x/4, 0, material+cable_holder_y/2];
 
 
   if (three_d) {
@@ -452,12 +505,6 @@ module assemble_case(three_d=true) {
     linear_extrude(height=material, center=true)
       children(1);
 
-    /* translate(d3_midframe)
-    rotate(d3_back_rotate)
-    linear_extrude(height=material, center=true)
-      children(6); */
-
-
     d3_catch_z = case_z;
     for (i=[-1, 1]) {
         translate([i*catch_x, catch_y, 0])
@@ -477,6 +524,16 @@ module assemble_case(three_d=true) {
     translate(d3_button)
       children(9);
 
+    translate([-d3_button[0], d3_button[1], d3_button[2]])
+      children(9);
+
+
+    translate(d3_cableholder)
+      rotate([90, 0, 90])
+      linear_extrude(height=material, center=true)
+      children(10);
+
+
   } else {
     echo("not implemented");
   }
@@ -494,4 +551,9 @@ assemble_case() {
   bolt_catch_3d(project=false); //7
   py_portal(); //8
   arcade_button(); //9
+  cable_holder(length=cable_holder_x, h=cable_holder_y,
+    material=material, bolt=bolt_dia, micro_x=micro_usb_x, micro_y=micro_usb_y,
+    add_tab=true); //10
+  cable_holder(length=cable_holder_x, h=cable_holder_y,
+    material=material, bolt=bolt_dia, add_tab=true); //11
 }
