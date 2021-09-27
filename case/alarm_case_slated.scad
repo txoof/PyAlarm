@@ -38,6 +38,15 @@ grill_width = 1.5;
 voronoi_round = 0.1; //[0.1:.1:1]
 vornoi_thickness = .4; //[0.1:.1:2]
 
+/* [Arcade Buttons] */
+button_screw_r = 14;
+button_screw_h = 36;
+button_cap_r = 16.75;
+button_cap_h = 3.5;
+button_r = 12;
+button_h = 1+button_cap_h;
+button_fillet_r = 1;
+
 /* [Hidden] */
 z_front = case_z/cos(display_tilt);
 y_top = case_y - case_z*tan(display_tilt);
@@ -192,6 +201,35 @@ module bolt_catch_3d(dia=3, overage=1.05, finger=5, project=false) {
   /* bolt_catch(dia=dia, bolt_hole=bolt_hole, nut_hole=nut_hole, tab=tab, overage=overage, finger=finger, project=project, cutter=cutter); */
 }
 
+
+module arcade_button() {
+  $fn=128;
+
+  union() {
+    translate([0, 0, -button_screw_h])
+    color("gray")
+    cylinder(r=button_screw_r, h=button_screw_h);
+
+    color("gray")
+    rotate_extrude(angle=360) {
+      difference() {
+        minkowski() {
+          square([button_cap_r*2-button_fillet_r*2, (button_cap_h-button_fillet_r*2)*2], center=true);
+          circle(r=button_fillet_r);
+        }
+        translate([0, -button_cap_h/2])
+        square([button_cap_r*2, button_cap_h], center=true);
+        translate([0, 0])
+        square([button_cap_r, button_cap_h]);
+      }
+    } // end rotate extrude
+    color("red")
+    cylinder(r=button_r, h=button_h);
+
+
+  } // end union
+
+}
 
 module front() {
   x = case_x;
@@ -367,13 +405,14 @@ module assemble_case(three_d=true) {
   colors = ["red", "blue", "yellow", "purple", "orange", "green"];
   d3_bottom = [0, 0, material/2];
   d3_top = [0, (case_y-y_top)/2, case_z-material/2];
-  d3_back = [0, (case_y/2-material/2), case_z/2];
-  d3_front = [0, -(case_y-material)/2+(case_y-y_top)/2, case_z/2];
-  d3_front_rotate = [90-display_tilt, 0, 0];
-  d3_midframe = [d3_front[0], d3_front[1]+board_mounted_z, d3_front[2]];
+  d3_front = [0, (case_y/2-material/2), case_z/2];
+  d3_back = [0, -(case_y-material)/2+(case_y-y_top)/2, case_z/2];
+  d3_back_rotate = [90-display_tilt, 0, 0];
+  d3_midframe = [d3_back[0], d3_back[1]+board_mounted_z, d3_back[2]];
   d3_left = [-(case_x-material)/2, 0, case_z/2];
   d3_right = [(case_x-material)/2, 0, case_z/2];
-  d3_pyportal = [d3_front[0], d3_front[1]+screen_z/2, d3_front[2]];
+  d3_pyportal = [d3_front[0], d3_front[1]-board_mounted_z/2, d3_front[2]];
+  d3_button = [case_x/4, d3_top[1], d3_top[2]+material/2];
 
 
   if (three_d) {
@@ -383,7 +422,7 @@ module assemble_case(three_d=true) {
       children(0);
 
     color(colors[1])
-    translate(d3_back)
+    translate(d3_front)
     rotate([90, 0, 0])
     linear_extrude(height=material, center=true)
       children(5);
@@ -407,13 +446,13 @@ module assemble_case(three_d=true) {
       children(4);
 
     color(colors[5])
-    translate(d3_front)
-    rotate(d3_front_rotate)
+    translate(d3_back)
+    rotate(d3_back_rotate)
     linear_extrude(height=material, center=true)
       children(1);
 
     /* translate(d3_midframe)
-    rotate(d3_front_rotate)
+    rotate(d3_back_rotate)
     linear_extrude(height=material, center=true)
       children(6); */
 
@@ -429,9 +468,13 @@ module assemble_case(three_d=true) {
         children(7);
     }
 
-    /* translate(d3_pyportal)
-    rotate(d3_front_rotate)
-      children(8); */
+
+    translate(d3_pyportal)
+      rotate([-90, 0, 0])
+      children(8);
+
+    translate(d3_button)
+      children(9);
 
   } else {
     echo("not implemented");
@@ -449,4 +492,5 @@ assemble_case() {
   mid_frame();  //6
   bolt_catch_3d(project=false); //7
   py_portal(); //8
+  arcade_button(); //9
 }
