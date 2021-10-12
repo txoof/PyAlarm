@@ -1,0 +1,2 @@
+# foo
+print('auto save!')

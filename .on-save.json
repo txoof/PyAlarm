@@ -1,0 +1,8 @@
+[
+  {
+    "files": "code/*.py",
+    "command": "./copy_to_device.sh ${srcFile}",
+    "showOutput": true
+
+  }
+]
