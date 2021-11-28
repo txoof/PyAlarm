@@ -1,2 +1,2 @@
 # foo
-print('auto save!')
+print('auto save! > push this to device >>>')
