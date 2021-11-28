@@ -3,6 +3,9 @@ include <PyPortal_model.scad>
 use <voronoi.scad>
 use <BOLTS/BOLTS.scad>
 
+/* [Display] */
+// Display 3D when True
+ThreeDee = true;
 
 /* [Design] */
 case_x = 125;
@@ -21,10 +24,19 @@ speaker_grill_type = "grill"; //[grill, voronoi]
 speaker_dia = 35;
 
 /* [Cable Holder] */
-cable_holder_x = 30;
+// overall length of cable holder
+cable_holder_x = 30; 
+// height of cable holder
 cable_holder_y = 15;
+// width of cable slot
 micro_usb_x = 8;
+// height of cable slot
 micro_usb_y = 8;
+// x location with respect to center
+cable_holder_loc_x = -30;
+// y location wint respect to center
+cable_holder_loc_y = 0;
+
 /* [Feet] */
 /* foot_height = 6;
 chamfer_rad = 15;
@@ -147,6 +159,8 @@ module speaker_cutter() {
   }
 }
 
+function bolt_catch_dim(dia) =   MetricHexagonNut_dims(key=str("M", dia), part_mode="default")[search(["e_min"], MetricHexagonNut_dims(key=str("M", dia), part_mode="default"))[0]][1]*1.5;
+
 module bolt_catch(dia=3, bolt_hole=true, nut_hole=false, tab=false, overage=1.05, finger=5, project=false, cutter=false) {
   key=str("M",dia);
   nut_params = MetricHexagonNut_dims(key=key, part_mode="default");
@@ -190,6 +204,7 @@ module bolt_catch(dia=3, bolt_hole=true, nut_hole=false, tab=false, overage=1.05
   }
 }
 
+
 module bolt_catch_3d(dia=3, overage=1.05, finger=5, project=false) {
   colors=["gold", "olive"];
 
@@ -214,6 +229,18 @@ module bolt_catch_3d(dia=3, overage=1.05, finger=5, project=false) {
   /* bolt_catch(dia=dia, bolt_hole=bolt_hole, nut_hole=nut_hole, tab=tab, overage=overage, finger=finger, project=project, cutter=cutter); */
 }
 
+module bolt_catch_2d(dia=3, overage=1.05, finger=5) {
+  x_dim = bolt_catch_dim(dia);
+  translate([0, -material - x_dim/2, 0]) {
+    bolt_catch(dia=dia, overage=overage, finger=finger, nut_hole=true, tab=true);
+  }
+  for (i=[1, 2]) {
+    translate([i*(x_dim+material), -x_dim/2, 0]) {
+      bolt_catch(dia=dia, overage=overage, finger=finger);
+    }
+  }
+  
+}
 
 module arcade_button() {
   $fn=128;
@@ -245,38 +272,48 @@ module arcade_button() {
 }
 
 module cable_holder(corner_rad=1, length=30, h=15, material=3,
-  add_tab=true, bolt=3, tab=5, micro_x=8, micro_y=8) {
+  add_tab=true, bolt=3, tab=5, micro_x=8, micro_y=8, cutter=false) {
   mink_body_size = [length-2*corner_rad, h-2*corner_rad];
   mink_usb_size = [micro_x-2*corner_rad, micro_y];
   $fn=36;
-  difference() {
-    union() {
-      minkowski() {
-        square(mink_body_size, center=true);
-        circle(corner_rad);
-      } // end minkowski
-      if(add_tab) {
-        for (i=[-1, 1]) {
-          translate([i*(length-tab)/2, -h/2, 0])
-            square([tab, material*2], center=true);
-        } //end for
+
+  if (cutter) {
+    for (i=[-1, 1]) {
+      translate([i*(length/2-tab/2), 0, 0]) {
+        square([tab, material], center=true);
       }
-    } //end union
+    }
+  } else {
+    difference() {
+      union() {
+        minkowski() {
+          square(mink_body_size, center=true);
+          circle(corner_rad);
+        } // end minkowski
+        if(add_tab) {
+          for (i=[-1, 1]) {
+            translate([i*(length-tab)/2, -h/2, 0])
+              square([tab, material*2], center=true);
+          } //end for
+        }
+      } //end union
 
-    for(i=[-1, 1]) {
-      translate([i*(length/2-bolt), 0, 0])
-        circle(r=bolt/2);
-    } // end for
+      for(i=[-1, 1]) {
+        translate([i*(length/2-bolt), 0, 0])
+          circle(r=bolt/2);
+      } // end for
 
-    if(add_tab){
-      translate([0, -h/2+micro_y/2])
-      minkowski() {
-        square(mink_usb_size, center=true);
-        circle(corner_rad);
-      } // end usb minkowski
-    } // end if tab
-  } // end difference
+      if(add_tab){
+        translate([0, -h/2+micro_y/2])
+        minkowski() {
+          square(mink_usb_size, center=true);
+          circle(corner_rad);
+        } // end usb minkowski
+      } // end if tab
+    } // end difference
+  }
 } // end cable holder
+
 
 module front() {
   x = case_x;
@@ -348,6 +385,10 @@ module bottom() {
         bolt_catch(cutter=true);
       } // end translate
     } // end i
+    translate([cable_holder_loc_x, cable_holder_loc_y]) {
+      rotate([0, 0, 90])
+      cable_holder(cutter=true);
+    }
   } // difference
 } // end bottom
 
@@ -466,7 +507,18 @@ module assemble_case(three_d=true) {
   d3_right = [(case_x-material)/2, 0, case_z/2];
   d3_pyportal = [d3_front[0], d3_front[1]-board_mounted_z/2, d3_front[2]];
   d3_button = [case_x/4, d3_top[1], d3_top[2]+material/2];
-  d3_cableholder = [-case_x/4, 0, material+cable_holder_y/2];
+  // d3_cableholder = [-case_x/4, 0, material+cable_holder_y/2];
+  d3_cableholder = [cable_holder_loc_x, cable_holder_loc_y, material+cable_holder_y/2];
+
+  d2_bottom = [0, 0, 0];
+  d2_back = [0, case_y/2 + z_front/2 + material, 0];
+  d2_left = [case_x/2 + case_y/2 + material, case_y/2 + z_front/2 + material, 0];
+  d2_right = [d2_left[0] + y_top + material, d2_left[1], 0];
+  d2_front = [case_x + material, case_y/2 - case_z/2];
+  d2_top = [0, -case_y/2 - y_top/2 - material, 0];
+  d2_cableholder = [d2_front[0] - cable_holder_x/2, d2_front[1] + cable_holder_y, 0];
+  d2_cableholder_plate = [d2_front[0] - cable_holder_x/2, d2_front[1] - material*1.5, 0];
+  d2_bolt_catch = [case_x/2+bolt_catch_dim(3)/2 + material, d2_front[1] - case_z/2 - bolt_catch_dim(3)/2 - material, 0];
 
 
   if (three_d) {
@@ -531,16 +583,77 @@ module assemble_case(three_d=true) {
     translate(d3_cableholder)
       rotate([90, 0, 90])
       linear_extrude(height=material, center=true)
-      children(10);
-
-
+      children(10);    
+    
+    translate([d3_cableholder[0]-material*2, d3_cableholder[1], d3_cableholder[2]]) {
+      rotate([90, 0, 90])
+      linear_extrude(height=material, center=true)
+      children(11);
+    }
   } else {
-    echo("not implemented");
+    // bottom
+    color(colors[5])
+    translate(d2_bottom) {
+      children(0);
+    }
+
+    //back
+    color(colors[1])
+    translate(d2_back) {
+      children(1);
+    }
+
+    //left side
+    color(colors[3])
+    translate(d2_left) {
+      children(2);
+    }
+
+    //right side
+    color(colors[2])
+    translate(d2_right) {
+      rotate([0, 0, 180])
+      children(2);
+    }
+
+    //top
+    color(colors[4])
+    translate(d2_top) {
+      children(4);
+    }
+
+    //front
+    color(colors[1])
+    translate(d2_front)  {
+      children(5);
+    }
+
+    //cable holder
+    translate(d2_cableholder) {
+      children(10);
+    }
+
+    //cable holder plate
+    translate(d2_cableholder_plate) {
+      children(11);
+    }
+
+    //bolt catches
+    for (i=[1, 2]) {
+      for(j=[0, -1, -2]) {
+        translate([d2_bolt_catch[0]*i, d2_bolt_catch[1]+(bolt_catch_dim(3)+material*2)*j  ]) {
+          children(12);
+        }
+      }
+    }
+
+
   }
+
 
 }
 
-assemble_case() {
+assemble_case(ThreeDee) {
   bottom();   //0
   back();     //1
   left();     //2
@@ -555,5 +668,8 @@ assemble_case() {
     material=material, bolt=bolt_dia, micro_x=micro_usb_x, micro_y=micro_usb_y,
     add_tab=true); //10
   cable_holder(length=cable_holder_x, h=cable_holder_y,
-    material=material, bolt=bolt_dia, add_tab=true); //11
+    material=material, bolt=bolt_dia, add_tab=false); //11
+  bolt_catch_2d(dia=3); //12
+
 }
+
