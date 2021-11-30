@@ -7,7 +7,7 @@
     "python.analysis.extraPaths": [
         "/Users/aaronciuffo/.vscode/extensions/joedevivo.vscode-circuitpython-0.1.15/boards/0x239A/0x8036",
         "/Users/aaronciuffo/.vscode/extensions/joedevivo.vscode-circuitpython-0.1.15/stubs",
-        "/Users/aaronciuffo/Library/Application Support/Code/User/globalStorage/joedevivo.vscode-circuitpython/bundle/20211127/adafruit-circuitpython-bundle-py-20211127/lib"
+        "/Users/aaronciuffo/Library/Application Support/Code/User/globalStorage/joedevivo.vscode-circuitpython/bundle/20211130/adafruit-circuitpython-bundle-py-20211130/lib"
     ],
     "circuitpython.board.version": null,
     "circuitpython.board.vid": "0x239A",
@@ -17,8 +17,12 @@
         "commands": [
         {
             "match": "./code.*",
-            "cmd": "[ -f /Volumes/CIRCUITPY/.runonsave_remote.sentry ] && rsync -avzcW ./code/ /Volumes/CIRCUITPY || echo \"run 'touch /Volumes/CIRCUITPY/.runonsave_remote.sentry' to enable auto push of code\""
+            "cmd": "[ -f /Volumes/CIRCUITPY/.runonsave_remote.sentry ] && date; rsync -avzcW ./code/ /Volumes/CIRCUITPY || echo \"run 'touch /Volumes/CIRCUITPY/.runonsave_remote.sentry' to enable auto push of code\""
         },
+        {
+            "match": "./code.*",
+            "cmd": "[ -f /Volumes/CIRCUITPY/.runonsave_remote.sentry ] && date; rsync -avzcW ./lib /Volumes/CIRCUITPY || echo \"run 'touch /Volumes/CIRCUITPY/.runonsave_remote.sentry' to enable auto push of code\""
+        }, 
         ]
     }
 }
